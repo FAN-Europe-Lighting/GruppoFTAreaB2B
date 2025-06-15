@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ordina su Gruppo FT</title>
+    <style>
+        body {
+            background-color: #04353D;
+            font-family: Arial, sans-serif;
+            color: white;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            flex-direction: column;
+        }
+
+        .container {
+            background-color: rgba(255, 255, 255, 0.1);
+            padding: 20px;
+            border-radius: 10px;
+            width: 100%;
+            max-width: 600px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+        }
+
+        img.logo {
+            width: 150px;
+            margin-bottom: 20px;
+        }
+
+        input[type="text"], input[type="number"], select, textarea {
+            width: calc(100% - 20px);
+            padding: 10px;
+            margin: 5px 0;
+            border: none;
+            border-radius: 5px;
+        }
+
+        textarea {
+            resize: vertical;
+            min-height: 80px;
+        }
+
+        button {
+            background-color: #00796B;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+
+        button:hover {
+            background-color: #004D40;
+        }
+
+        table {
+            width: 100%;
+            margin-top: 20px;
+            border-collapse: collapse;
+        }
+
+        th, td {
+            padding: 10px;
+            border-bottom: 1px solid white;
+            text-align: center;
+        }
+
+        .success-message, .error-message, .welcome-message {
+            padding: 10px;
+            border-radius: 5px;
+            display: none;
+            margin-top: 10px;
+        }
+
+        .success-message {
+            background-color: #4CAF50;
+        }
+
+        .error-message {
+            background-color: #D32F2F;
+        }
+
+        .welcome-message {
+            background-color: #00796B;
+            color: white;
+        }
+
+        small {
+            font-size: 12px;
+            color: #ccc;
+        }
+
+        @media (max-width: 600px) {
+            input, button, select, textarea {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <img src="https://via.placeholder.com/150" alt="Logo" class="logo">
+
+        <h2>Inserisci ordine :)</h2>
+
+        <label for="codiceCliente">Codice Cliente *</label>
+        <input type="text" id="codiceCliente" placeholder="Inserisci il codice cliente (es: C02675)" required>
+        <button id="verificaClienteBtn">Accedi</button>
+
+        <div class="welcome-message" id="welcomeMessage"></div>
+
+        <label for="spedizione">È necessaria la spedizione? *</label>
+        <select id="spedizione" required onchange="gestisciSpedizione()">
+            <option value="">Seleziona un'opzione</option>
+            <option value="SI">Sì</option>
+            <option value="NO">No</option>
+        </select>
+
+        <input type="text" id="nomeCognome" placeholder="Nome e cognome destinatario" disabled>
+        <input type="text" id="emailTelefono" placeholder="Email e numero di telefono del destinatario" disabled>
+        <input type="text" id="indirizzo" placeholder="Indirizzo del destinatario" disabled>
+        <input type="text" id="cittaCap" placeholder="Località e CAP" disabled>
+        <input type="text" id="paese" placeholder="Paese" disabled>
+
+        <input type="text" id="articolo" placeholder="Cerca articolo..." list="articoliList">
+        <datalist id="articoliList"></datalist>
+        <input type="number" id="quantita" placeholder="Quantità" min="1">
+
+        <button id="aggiungiBtn">Aggiungi Articolo</button>
+
+        <table id="carrello">
+            <thead>
+                <tr>
+                    <th>Codice Articolo</th>
+                    <th>Quantità</th>
+                    <th>Azioni</th>
+                </tr>
+            </thead>
+            <tbody></tbody>
+        </table>
+
+        <label for="note">Note (facoltative)</label>
+        <textarea id="note" placeholder="Inserisci eventuali note aggiuntive..."></textarea>
+
+        <button id="inviaOrdineBtn" onclick="inviaOrdine()" disabled>Invia Ordine</button>
+
+        <div class="success-message" id="successMessage">✅ Ordine inviato con successo!</div>
+        <div class="error-message" id="errorMessage">❌ Compila tutti i campi obbligatori!</div>
+    </div>
+
+<script>
+const apiArt = 'https://script.google.com/macros/s/AKfycbwiSXFMincjGfEEps8cyq-1OXq5f88Y8ID0i8SA5RwDyhhdFmNuhz89w7IrsoarO3Zf/exec';
+const apiCli = 'https://script.google.com/macros/s/AKfycbwL_1jsTrju0EmlADoX1_xx1v2-hmHig_arq5YDS_aZwtOt8rfXEHAwrMx3_mO0EV4KTA/exec';
+const apiOrd = 'https://script.google.com/macros/s/AKfycbyDJJQ3vkcwovJXECEnYuPSs76ZB7K8JooDSD0QYyH2gPjfvWVpi39xprdbX_5h4yBN/exec';
+
+
+let carrello = [];
+
+function gestisciSped() {
+  const s = document.getElementById('spedizione').value === 'SI';
+  ['nomeCognome','emailTelefono','indirizzo','cittaCap','paese'].forEach(id => {
+    const e = document.getElementById(id);
+    e.disabled = !s;
+    e.required = s;
+    if (!s) e.value = '';
+  });
+}
+
+function aggiungiArt() {
+  const c = document.getElementById('articolo').value.trim();
+  const q = parseInt(document.getElementById('quantita').value);
+  if (!c || isNaN(q) || q<1) return alert('Articolo o quantità non validi');
+  const es = carrello.find(i=>i.articolo===c);
+  if (es) es.quantita+=q; else carrello.push({articolo:c,quantita:q});
+  aggiornaCar();
+  document.getElementById('articolo').value='';
+  document.getElementById('quantita').value='';
+}
+
+function aggiornaCar() {
+  const tb = document.getElementById('carrello').tBodies[0];
+  tb.innerHTML='';
+  carrello.forEach((i,idx)=>{
+    const r=tb.insertRow();
+    r.insertCell().textContent=i.articolo;
+    r.insertCell().textContent=i.quantita;
+    const btn=document.createElement('button');
+    btn.textContent='Rimuovi';
+    btn.onclick=()=>{carrello.splice(idx,1);aggiusta();}
+    function aggiusta(){ aggiornaCar(); }
+    r.insertCell().appendChild(btn);
+  });
+}
+
+function caricaArt() {
+  fetch(`${apiArt}?action=getArticoli`)
+  .then(r=>r.json())
+  .then(data=>{
+    const dl=document.getElementById('articoliList');
+    dl.innerHTML='';
+    data.forEach(a=>{
+      const o=document.createElement('option');
+      o.value=a[0];
+      o.textContent=a[1];
+      dl.appendChild(o);
+    });
+  });
+}
+
+function verificaCli() {
+  const cod=document.getElementById('codiceCliente').value.trim();
+  fetch(`${apiCli}?action=getClienti`)
+  .then(r=>r.json())
+  .then(d=>{
+    const ok=d.find(c=>c[0]===cod);
+    const wm=document.getElementById('welcomeMessage');
+    const btn=document.getElementById('inviaOrdineBtn');
+    wm.style.display='block';
+    if(ok){ wm.textContent=`Benvenuto, ${ok[1]}`; wm.style.backgroundColor=''; btn.disabled=false }
+    else { wm.textContent='Codice non valido'; wm.style.backgroundColor='#D32F2F'; btn.disabled=true }
+  });
+}
+
+function inviaOrd() {
+  if (!carrello.length) return alert('Carrello vuoto');
+  const base={
+    CardCode:document.getElementById('codiceCliente').value.trim(),
+    Spedizione:document.getElementById('spedizione').value,
+    NomeCognome:document.getElementById('nomeCognome').value.trim(),
+    EmailTelefono:document.getElementById('emailTelefono').value.trim(),
+    Indirizzo:document.getElementById('indirizzo').value.trim(),
+    CittaCap:document.getElementById('cittaCap').value.trim(),
+    Paese:document.getElementById('paese').value.trim(),
+    Note:document.getElementById('note').value.trim()
+  };
+  const payload={ ordineDettagli:carrello.map(i=>({...base,ItemCode:i.articolo,Quantity:i.quantita})) };
+  fetch(apiOrd,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)})
+  .then(r=>r.json())
+  .then(resp=>{
+    const msg=document.getElementById(resp.success?'successMessage':'errorMessage');
+    msg.textContent=resp.success?`ID ordine: ${resp.idOrdine}`:`Errore: ${resp.error}`;
+    msg.style.display='block';
+    if(resp.success){ carrello=[]; aggiornaCar(); }
+  })
+  .catch(_=>{ const m=document.getElementById('errorMessage'); m.textContent='Errore connessione'; m.style.display='block'; });
+}
+
+window.onload=()=>{
+  caricaArt();
+  document.getElementById('spedizione').onchange=gestisciSped;
+  document.getElementById('aggiungiBtn').onclick=aggiungiArt;
+  document.getElementById('verificaClienteBtn').onclick=verificaCli;
+  document.getElementById('inviaOrdineBtn').onclick=inviaOrd;
+};
+</script>
+
+
+</body>
+</html>
