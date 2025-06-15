@@ -106,9 +106,9 @@
 <body>
 
     <div class="container">
-        <img src="https://via.placeholder.com/150" alt="Logo" class="logo">
+        <img src="https://imgur.com/a/cbRs0Bi" alt="Logo" class="logo">
 
-        <h2>Inserisci ordine :)</h2>
+        <h2>INSERIRE ORDINE</h2>
 
         <label for="codiceCliente">Codice Cliente *</label>
         <input type="text" id="codiceCliente" placeholder="Inserisci il codice cliente (es: C02675)" required>
@@ -250,11 +250,13 @@ function inviaOrd() {
   fetch(apiOrd,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)})
   .then(r=>r.json())
   .then(resp=>{
-    const msg=document.getElementById(resp.success?'successMessage':'errorMessage');
-    msg.textContent=resp.success?`ID ordine: ${resp.idOrdine}`:`Errore: ${resp.error}`;
-    msg.style.display='block';
-    if(resp.success){ carrello=[]; aggiornaCar(); }
-  })
+  const msg=document.getElementById(resp.success?'successMessage':'errorMessage');
+  msg.textContent=resp.success
+    ? "Ordine inviato con successo! Riceverai a breve una conferma via mail con tutti i dettagli dell’ordine."
+    : `Errore: ${resp.error}`;
+  msg.style.display='block';
+  if(resp.success){ carrello=[]; aggiornaCar(); }
+})
   .catch(_=>{ const m=document.getElementById('errorMessage'); m.textContent='Errore connessione'; m.style.display='block'; });
 }
 
