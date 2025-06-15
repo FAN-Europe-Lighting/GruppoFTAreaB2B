@@ -1,18 +1,13 @@
 const fetch = require("node-fetch");
 
-exports.handler = async (event) => {
+exports.handler = async () => {
   try {
-    const googleSheetUrl = process.env.GOOGLE_SHEET_CUSTOMERS_URL;
-    const response = await fetch(`${googleSheetUrl}?action=getClienti`, {
-      method: "GET"
-    });
-    if (!response.ok) {
-      throw new Error(`Errore API Google Sheet: ${response.statusText}`);
-    }
-    const clienti = await response.json();
+    const url = process.env.GOOGLE_SHEET_CUSTOMERS_URL + '?action=getClienti';
+    const response = await fetch(url);
+    const data = await response.json();
     return {
       statusCode: 200,
-      body: JSON.stringify(clienti),
+      body: JSON.stringify(data),
     };
   } catch (error) {
     return {
