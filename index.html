@@ -156,10 +156,9 @@
     </div>
 
 <script>
-const apiArt = 'https://script.google.com/macros/s/AKfycbwiSXFMincjGfEEps8cyq-1OXq5f88Y8ID0i8SA5RwDyhhdFmNuhz89w7IrsoarO3Zf/exec';
-const apiCli = 'https://script.google.com/macros/s/AKfycbwL_1jsTrju0EmlADoX1_xx1v2-hmHig_arq5YDS_aZwtOt8rfXEHAwrMx3_mO0EV4KTA/exec';
-const apiOrd = 'https://script.google.com/macros/s/AKfycbyDJJQ3vkcwovJXECEnYuPSs76ZB7K8JooDSD0QYyH2gPjfvWVpi39xprdbX_5h4yBN/exec';
-
+const apiArt = '/.netlify/functions/receiveproducts';
+const apiCli = '/.netlify/functions/receivecustomers';
+const apiOrd = '/.netlify/functions/sendorders';
 
 let carrello = [];
 
@@ -200,32 +199,39 @@ function aggiornaCar() {
 }
 
 function caricaArt() {
-  fetch(`${apiArt}?action=getArticoli`)
-  .then(r=>r.json())
-  .then(data=>{
-    const dl=document.getElementById('articoliList');
-    dl.innerHTML='';
-    data.forEach(a=>{
-      const o=document.createElement('option');
-      o.value=a[0];
-      o.textContent=a[1];
-      dl.appendChild(o);
+  fetch(apiArt)
+    .then(r => r.json())
+    .then(data => {
+      const dl = document.getElementById('articoliList');
+      dl.innerHTML = '';
+      data.forEach(a => {
+        const o = document.createElement('option');
+        o.value = a[0];
+        o.textContent = a[1];
+        dl.appendChild(o);
+      });
     });
-  });
 }
 
 function verificaCli() {
-  const cod=document.getElementById('codiceCliente').value.trim();
-  fetch(`${apiCli}?action=getClienti`)
-  .then(r=>r.json())
-  .then(d=>{
-    const ok=d.find(c=>c[0]===cod);
-    const wm=document.getElementById('welcomeMessage');
-    const btn=document.getElementById('inviaOrdineBtn');
-    wm.style.display='block';
-    if(ok){ wm.textContent=`Benvenuto, ${ok[1]}`; wm.style.backgroundColor=''; btn.disabled=false }
-    else { wm.textContent='Codice non valido'; wm.style.backgroundColor='#D32F2F'; btn.disabled=true }
-  });
+  const cod = document.getElementById('codiceCliente').value.trim();
+  fetch(apiCli)
+    .then(r => r.json())
+    .then(d => {
+      const ok = d.find(c => c[0] === cod);
+      const wm = document.getElementById('welcomeMessage');
+      const btn = document.getElementById('inviaOrdineBtn');
+      wm.style.display = 'block';
+      if (ok) {
+        wm.textContent = `Benvenuto, ${ok[1]}`;
+        wm.style.backgroundColor = '';
+        btn.disabled = false;
+      } else {
+        wm.textContent = 'Codice non valido';
+        wm.style.backgroundColor = '#D32F2F';
+        btn.disabled = true;
+      }
+    });
 }
 
 function inviaOrd() {
